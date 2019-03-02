@@ -1,0 +1,7 @@
+*/*.cache
+*/*.hw
+*/*.xpr
+*/*.srcs
+*/*.runs
+*/*..ip_user_files
+*/*.ip_user_files

@@ -54,15 +54,22 @@ begin
     end if;
   end process;
   
-  logic: process(clk)
+  first: process(clk)
   begin
     if rising_edge(clk) then
       if counter = x"FFFF" then
         q1 <= btn;
       end if;
-      q2 <= q1;
-      q3 <= q2;
-      enable <= q2 and (not q3);
     end if;
   end process;
+  
+  last_two: process(clk)
+  begin
+    if rising_edge(clk) then
+      q2 <= q1;
+      q3 <= q2;
+    end if;
+  end process;
+  
+  enable <= q2 and (not q3);
 end Behavioral;
