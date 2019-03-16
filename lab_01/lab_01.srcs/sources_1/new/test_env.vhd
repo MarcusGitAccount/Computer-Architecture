@@ -63,54 +63,108 @@ component  register_file
   );
 end component;
 
-signal counter: std_logic_vector(2 downto 0) := (others => '0');
-signal mpg_out: std_logic;
-signal sel: std_logic_vector(1 downto 0) := (others => '0');
-signal result: std_logic_vector(15 downto 0) := (others => '0');
+component rom
+  port (
+    addr: in std_logic_vector(7 downto 0);
+    rout: out std_logic_vector(15 downto 0);
+    ce: in std_logic
+  );
+end component;
 
-begin 
-  led(7 downto 0) <= sw(7 downto 0);
-  led(14 downto 13) <= sel; -- display current operation
-  led(15) <= '1' when result = x"0000" else '0'; -- alu zero flag
+component ram
+  port(
+    we: in std_logic; -- write enable
+    data_in: in std_logic_vector(15 downto 0);
+    data_out: out std_logic_vector(15 downto 0);
+    addr: in std_logic_vector(3 downto 0);
+    clk: in std_logic
+  );
+end component;
 
-  counter_ssd: process(clk, mpg_out)
+signal counter_enable, regwr: std_logic;
+signal counter: std_logic_vector(7 downto 0) := (others => '0');
+signal wd, rd1, rd2: std_logic_vector(15 downto 0);
+signal displayed: std_logic_vector(15 downto 0);
+signal rom_out, ram_out: std_logic_vector(15 downto 0);
+
+signal reg_clk_enable, ram_clk_enable: std_logic;
+signal clk_reg, clk_ram: std_logic;
+
+begin  
+  first_button: mpg port map(
+    btn => btn(0), 
+    clk => clk, 
+    enable => counter_enable);
+  
+  second_button: mpg port map(
+    btn => btn(1),
+    clk => clk,
+    enable => regwr
+  );
+  
+  ssd_comp: ssd port map(
+    clk => clk,
+    digits => displayed,
+    an => an,
+    cat => cat);
+  
+  reg_file_comp: register_file port map(
+    ra1 => counter(3 downto 0), 
+    ra2 => counter(3 downto 0),
+    rd1 => rd1, 
+    rd2 => rd2,
+    wa => counter(3 downto 0),
+    wd => displayed,
+    clk => clk_reg,
+    regwr => regwr
+  );
+  
+  rom_comp: rom port map(
+    addr => counter,
+    rout => rom_out,
+    ce => '1'
+  );
+  
+  ram_comp: ram port map(
+    we => regwr,
+    data_in => displayed,
+    data_out => ram_out,
+    addr => counter(3 downto 0),
+    clk => clk_ram
+  );
+  
+  address_counter: process(counter_enable)
   begin
     if rising_edge(clk) then
-      if mpg_out = '1' then
-        sel <= sel + 1;
+      if counter_enable = '1' then
+        counter <= counter + 1;
       end if;
     end if;
   end process;
   
-  alu: process(sel, sw(7 downto 0))
+  mux_choose_memory: process(sw)
   begin
-    -- all operands are extended to a size of 16 bits
-    case sel is
-      -- addition
-      when "00" => 
-        result <= (x"000" & sw(7 downto 4)) + (x"000" & sw(3 downto 0));
-      -- substraction
-      when "01" =>
-        result <= (x"000" & sw(7 downto 4)) - (x"000" & sw(3 downto 0));
-      -- left shift by 2
-      when "10" =>
-        result <= b"000000" & sw(7 downto 0) & b"00";
-      -- right shift by 2
-      when "11" =>
-        result <= b"0000000000" & sw(7 downto 2);
+    case sw(2 downto 0) is
+      when "001"  => 
+        displayed <= rd1 + rd2;
+        reg_clk_enable <= '1';
+        ram_clk_enable <= '0';
+      when "010"  => 
+        displayed <= rom_out;
+        reg_clk_enable <= '0';
+        ram_clk_enable <= '0';
+      when "100"  => 
+        displayed <= ram_out(13 downto 0) & b"00";
+        reg_clk_enable <= '0';
+        ram_clk_enable <= '1';
       when others => 
-        result <= (others => '0');
+        displayed <= x"0000";
     end case;
   end process;
   
-  mpg_comp: mpg port map(
-    btn => btn(0), 
-    clk => clk, 
-    enable => mpg_out);
+  led(15 downto 8) <= counter;
+  led(2 downto 0) <= sw(2 downto 0);
   
-  ssd_comp: ssd port map(
-    clk => clk,
-    digits => result,
-    an => an,
-    cat => cat);
+  clk_reg <= clk and reg_clk_enable;
+  clk_ram <= clk and ram_clk_enable;
 end Behavioral;   
