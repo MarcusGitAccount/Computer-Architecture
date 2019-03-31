@@ -81,6 +81,15 @@ component ram
   );
 end component;
 
+component instr_fetch is
+  port (
+    branch_addr, jmp_addr: in std_logic_vector(15 downto 0);
+    clk, jmp, pcsrc: in std_logic;
+    next_instr_addr: out std_logic_vector(15 downto 0);
+    instr: out std_logic_vector(15 downto 0)
+  );
+end component;
+
 signal counter_enable, regwr: std_logic;
 signal counter: std_logic_vector(7 downto 0) := (others => '0');
 signal wd, rd1, rd2: std_logic_vector(15 downto 0);
@@ -145,15 +154,15 @@ begin
   mux_choose_memory: process(sw)
   begin
     case sw(2 downto 0) is
-      when "001"  => 
+      when "001"  => -- register file operations enabled
         displayed <= rd1 + rd2;
         reg_clk_enable <= '1';
         ram_clk_enable <= '0';
-      when "010"  => 
+      when "010"  => -- rom operations enabled
         displayed <= rom_out;
         reg_clk_enable <= '0';
         ram_clk_enable <= '0';
-      when "100"  => 
+      when "100"  => -- ram operations enabled
         displayed <= ram_out(13 downto 0) & b"00";
         reg_clk_enable <= '0';
         ram_clk_enable <= '1';
