@@ -86,29 +86,31 @@ component instr_fetch is
     branch_addr, jmp_addr: in std_logic_vector(15 downto 0);
     clk, jmp, pcsrc: in std_logic;
     next_instr_addr: out std_logic_vector(15 downto 0);
-    instr: out std_logic_vector(15 downto 0)
+    instr: out std_logic_vector(15 downto 0);
+    enable, reset: in std_logic
   );
 end component;
 
-signal counter_enable, regwr: std_logic;
+signal clk_enable, reset_pc: std_logic;
 signal counter: std_logic_vector(7 downto 0) := (others => '0');
 signal wd, rd1, rd2: std_logic_vector(15 downto 0);
 signal displayed: std_logic_vector(15 downto 0);
 signal rom_out, ram_out: std_logic_vector(15 downto 0);
 
 signal reg_clk_enable, ram_clk_enable: std_logic;
-signal clk_reg, clk_ram: std_logic;
+signal instruction, pc: std_logic_vector(15 downto 0);
+signal clk_if: std_logic;
 
 begin  
   first_button: mpg port map(
     btn => btn(0), 
     clk => clk, 
-    enable => counter_enable);
+    enable => clk_enable);
   
   second_button: mpg port map(
     btn => btn(1),
     clk => clk,
-    enable => regwr
+    enable => reset_pc
   );
   
   ssd_comp: ssd port map(
@@ -117,63 +119,27 @@ begin
     an => an,
     cat => cat);
   
-  reg_file_comp: register_file port map(
-    ra1 => counter(3 downto 0), 
-    ra2 => counter(3 downto 0),
-    rd1 => rd1, 
-    rd2 => rd2,
-    wa => counter(3 downto 0),
-    wd => displayed,
-    clk => clk_reg,
-    regwr => regwr
+  instrfetch: instr_fetch port map (
+    clk => clk,
+    branch_addr => x"0002",
+    jmp_addr => x"0000",
+    instr => instruction,
+    next_instr_addr => pc,
+    jmp => sw(0),
+    pcsrc => sw(1),
+    reset => reset_pc,
+    enable => clk_enable
   );
-  
-  rom_comp: rom port map(
-    addr => counter,
-    rout => rom_out,
-    ce => '1'
-  );
-  
-  ram_comp: ram port map(
-    we => regwr,
-    data_in => displayed,
-    data_out => ram_out,
-    addr => counter(3 downto 0),
-    clk => clk_ram
-  );
-  
-  address_counter: process(counter_enable)
+    
+  mux_leds: process(sw(7))
   begin
-    if rising_edge(clk) then
-      if counter_enable = '1' then
-        counter <= counter + 1;
-      end if;
-    end if;
-  end process;
-  
-  mux_choose_memory: process(sw)
-  begin
-    case sw(2 downto 0) is
-      when "001"  => -- register file operations enabled
-        displayed <= rd1 + rd2;
-        reg_clk_enable <= '1';
-        ram_clk_enable <= '0';
-      when "010"  => -- rom operations enabled
-        displayed <= rom_out;
-        reg_clk_enable <= '0';
-        ram_clk_enable <= '0';
-      when "100"  => -- ram operations enabled
-        displayed <= ram_out(13 downto 0) & b"00";
-        reg_clk_enable <= '0';
-        ram_clk_enable <= '1';
-      when others => 
-        displayed <= x"0000";
+    case sw(7) is
+      when '0'    => displayed <= instruction;
+      when '1'    => displayed <= pc;
+      when others => displayed <= (others => 'X');
     end case;
-  end process;
-  
-  led(15 downto 8) <= counter;
-  led(2 downto 0) <= sw(2 downto 0);
-  
-  clk_reg <= clk and reg_clk_enable;
-  clk_ram <= clk and ram_clk_enable;
+  end process; 
+    
+  led <= sw;
+  clk_if <= clk and clk_enable;
 end Behavioral;   
