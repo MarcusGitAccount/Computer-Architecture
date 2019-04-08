@@ -36,7 +36,7 @@ entity ram is
 end ram;
 
 architecture Behavioral of ram is
-type reg_file_data is array(15 downto 0) of std_logic_vector(15 downto 0);
+type reg_file_data is array(32767 downto 0) of std_logic_vector(15 downto 0);
 
 -- Function to init each line in the memory with a one_hot(index) vector
   function init_memory return reg_file_data is

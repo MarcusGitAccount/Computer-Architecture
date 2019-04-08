@@ -36,15 +36,29 @@ entity instr_fetch is
 end instr_fetch;
 
 architecture Behavioral of instr_fetch is
-  type instr_mem_data_type is array(15 downto 0) of std_logic_vector(15 downto 0);
+  type instr_mem_data_type is array(32767 downto 0) of std_logic_vector(15 downto 0);
   signal instructions: instr_mem_data_type := (
-    0 => x"000F",
-    1 => x"00F0",
-    2 => x"00FF",
-    3 => x"0F00",
-    4 => x"0F0F",
-    5 => x"0FFF",
-    others => (others => '0')
+    0  => b"010_000_001_0000000",
+    1  => b"010_000_111_0000001",
+    2  => b"000_010_000_010_0_100",
+    3  => b"001_001_011_1111111",
+    4  => b"001_000_100_0000001",
+    5  => b"000_010_011_101_0_000",
+    6  => b"000_101_000_101_1_110",
+    7  => b"000_101_100_110_0_000",
+    8  => b"010_110_110_0000000",
+    9  => b"100_010_011_0000111",
+    10 => b"110_010_011_0001000",
+    11 => b"101_110_111_0000001",
+    12 => b"110_110_111_0000010",
+    13 => b"001_101_011_1111111",
+    14 => b"100_000_000_1110110",
+    15 => b"001_101_010_0000001",
+    16 => b"100_000_000_1110100",
+    17 => b"010_000_000_0000001",
+    18 => b"100_000_000_0000001",
+    19 => b"010_000_000_0000000",
+    others => x"0000"
   );
   signal pc: std_logic_vector(15 downto 0) := x"0000";
 begin

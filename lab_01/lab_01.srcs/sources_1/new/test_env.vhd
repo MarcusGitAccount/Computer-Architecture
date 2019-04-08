@@ -91,6 +91,33 @@ component instr_fetch is
   );
 end component;
 
+component control_unit is
+  port (
+    RegWr, RegDest,ExtOp, AluSrc, MemWr, MemtoReg, Jump, B, L, G: out std_logic;
+    AluOp: out std_logic_vector(1 downto 0);
+    op_code: in std_logic_vector(2 downto 0);
+    debug_row: out std_logic_vector(0 to 15)
+  );
+end component;
+
+component instr_decode is
+  port(
+    clk, rf_enable: in std_logic;
+    instr: in std_logic_vector(15 downto 0);     -- I.F. instruction retrieved from ROM
+    RegWrite, RegDest, ExtOp: in std_logic;      -- input control 
+    wd: in std_logic_vector(15 downto 0);        -- write data input for rf
+    
+    rd1, rd2: out std_logic_vector(15 downto 0); -- rf file output(rs and rt registers)
+    Ext_imm: out std_logic_vector(15 downto 0);  -- immediate value extended to 16bits
+    sa: out std_logic;                           -- shift amount
+    func: out std_logic_vector(2 downto 0)       -- function for R type instructions
+  );
+end component;
+
+signal RegWr, RegDest, ExtOp, AluSrc, MemWr, MemtoReg, Jump, B, L, G: std_logic;
+signal AluOp: std_logic_vector(1 downto 0);
+signal func: std_logic_vector(2 downto 0);
+
 signal clk_enable, reset_pc: std_logic;
 signal counter: std_logic_vector(7 downto 0) := (others => '0');
 signal wd, rd1, rd2: std_logic_vector(15 downto 0);
@@ -98,8 +125,8 @@ signal displayed: std_logic_vector(15 downto 0);
 signal rom_out, ram_out: std_logic_vector(15 downto 0);
 
 signal reg_clk_enable, ram_clk_enable: std_logic;
-signal instruction, pc: std_logic_vector(15 downto 0);
-signal clk_if: std_logic;
+signal instruction, pc, Ext_imm, control_flags: std_logic_vector(15 downto 0);
+signal clk_if, sa: std_logic;
 
 begin  
   first_button: mpg port map(
@@ -130,16 +157,42 @@ begin
     reset => reset_pc,
     enable => clk_enable
   );
-    
-  mux_leds: process(sw(7))
+  
+  uc: control_unit port map(
+    RegWr => RegWr, RegDest => RegDest, 
+    ExtOp => ExtOp, AluSrc => AluSrc, MemWr => MemWr, MemtoReg => MemtoReg, 
+    Jump => Jump, B => B, L => L, G => G,
+    AluOp => AluOp, op_code => instruction(15 to 13),
+    debug_row => control_flags
+  );
+  
+  id: instr_decode port map(
+    clk =>  clk,
+    rf_enable => clk_enable,
+    instr => instruction,
+    RegWrite => RegWr,
+    RegDest => RegDest,
+    ExtOp => ExtOp,      
+    wd => wd,
+    rd1 => rd1, rd2 => rd2,
+    Ext_imm => Ext_imm, 
+    sa => sa,                          
+    func => func   
+  );
+  
+  mux_leds: process(sw(7 downto 5), instruction, pc, rd1, rd2, wd, control_flags)
   begin
-    case sw(7) is
-      when '0'    => displayed <= instruction;
-      when '1'    => displayed <= pc;
+    case sw(7 downto 5) is
+      when "000"    => displayed <= instruction;
+      when "001"    => displayed <= pc;
+      when "010"    => displayed <= rd1;
+      when "011"    => displayed <= rd2;
+      when "100"    => displayed <= wd;
+      when "101"    => displayed <= control_flags;
       when others => displayed <= (others => 'X');
     end case;
   end process; 
-    
+  
+  wd <= rd1 + rd2;
   led <= sw;
-  clk_if <= clk and clk_enable;
 end Behavioral;   
