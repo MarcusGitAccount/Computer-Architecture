@@ -55,7 +55,7 @@ begin
     end case;
   end process;
 
-  multiplexig_digit: process(div_counter)
+  multiplexig_digit: process(div_counter, digits)
   begin
     case div_counter(15 downto 14) is
       when "00"   => digit <= digits(15 downto 12);
