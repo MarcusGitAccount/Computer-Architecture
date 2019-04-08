@@ -161,7 +161,7 @@ begin
     RegWr => RegWr, RegDest => RegDest, 
     ExtOp => ExtOp, AluSrc => AluSrc, MemWr => MemWr, MemtoReg => MemtoReg, 
     Jump => Jump, B => B, L => L, G => G,
-    AluOp => AluOp, op_code => instruction(15 to 13)
+    AluOp => AluOp, op_code => instruction(15 downto 13)
   );
   
   id: instr_decode port map(
@@ -190,7 +190,7 @@ begin
     end case;
   end process; 
   
-  control_flags <= b"0000" & RegWr & RegDest & AluOp & ExtOp & AluSrc & MemWr & MemtoReg & Jump & B & L & G;
+  control_flags <= "0000" & RegWr & RegDest & AluOp & ExtOp & AluSrc & MemWr & MemtoReg & Jump & B & L & G;
   wd <= rd1 + rd2;
   led <= control_flags;
 end Behavioral;   
