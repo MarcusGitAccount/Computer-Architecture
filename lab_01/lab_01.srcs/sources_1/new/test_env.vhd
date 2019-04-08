@@ -95,8 +95,7 @@ component control_unit is
   port (
     RegWr, RegDest,ExtOp, AluSrc, MemWr, MemtoReg, Jump, B, L, G: out std_logic;
     AluOp: out std_logic_vector(1 downto 0);
-    op_code: in std_logic_vector(2 downto 0);
-    debug_row: out std_logic_vector(0 to 15)
+    op_code: in std_logic_vector(2 downto 0)
   );
 end component;
 
@@ -162,8 +161,7 @@ begin
     RegWr => RegWr, RegDest => RegDest, 
     ExtOp => ExtOp, AluSrc => AluSrc, MemWr => MemWr, MemtoReg => MemtoReg, 
     Jump => Jump, B => B, L => L, G => G,
-    AluOp => AluOp, op_code => instruction(15 to 13),
-    debug_row => control_flags
+    AluOp => AluOp, op_code => instruction(15 to 13)
   );
   
   id: instr_decode port map(
@@ -180,7 +178,7 @@ begin
     func => func   
   );
   
-  mux_leds: process(sw(7 downto 5), instruction, pc, rd1, rd2, wd, control_flags)
+  mux_leds: process(sw(7 downto 5), instruction, pc, rd1, rd2, wd)
   begin
     case sw(7 downto 5) is
       when "000"    => displayed <= instruction;
@@ -188,11 +186,11 @@ begin
       when "010"    => displayed <= rd1;
       when "011"    => displayed <= rd2;
       when "100"    => displayed <= wd;
-      when "101"    => displayed <= control_flags;
       when others => displayed <= (others => 'X');
     end case;
   end process; 
   
+  control_flags <= b"0000" & RegWr & RegDest & AluOp & ExtOp & AluSrc & MemWr & MemtoReg & Jump & B & L & G;
   wd <= rd1 + rd2;
-  led <= sw;
+  led <= control_flags;
 end Behavioral;   
