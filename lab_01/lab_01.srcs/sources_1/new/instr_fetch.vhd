@@ -55,20 +55,20 @@ architecture Behavioral of instr_fetch is
     14 => b"100_000_000_1110110",
     15 => b"001_101_010_0000001",
     16 => b"100_000_000_1110100",
-    17 => b"010_000_000_0000001",
+    17 => b"000_101_000_001_0_000",
     18 => b"100_000_000_0000001",
-    19 => b"010_000_000_0000000",
+    19 => b"001_000_001_1111111",
     others => x"0000"
   );
-  signal pc: std_logic_vector(15 downto 0) := x"0000";
+signal pc: std_logic_vector(15 downto 0) := x"0000";
 begin
-  next_instr_addr <= pc; -- pc + 1 !!!!!!!!!!
   instr <= instructions(conv_integer(pc));
   
   counter: process(clk, jmp, pcsrc, reset)
   begin
     if reset = '1' then
       pc <= x"0000";
+      next_instr_addr <= x"0001";
     elsif rising_edge(clk) then
       if enable = '1' then
         if jmp = '1' then
@@ -78,6 +78,7 @@ begin
         else
           pc <= pc + 1;
         end if;
+        next_instr_addr <= pc + 1;
       end if;
     end if;
   end process;

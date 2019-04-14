@@ -77,7 +77,7 @@ begin
       when "110" => -- bgt
         AluOp <= "11";
         G <= '1';
-      when "111" => -- jumo
+      when "111" => -- jump
         Jump <= '1';
     end case ;
   end process;

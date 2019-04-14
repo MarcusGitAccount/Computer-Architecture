@@ -1,0 +1,8 @@
+  ram: mem port map (
+    clk => clk , 
+    enable => clk_enable, 
+    MemWrite => MemWrite,
+    ram_address => AluRes,
+    ram_wd => rd2,
+    rdata => MemData
+  );

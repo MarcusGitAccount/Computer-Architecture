@@ -49,6 +49,7 @@ component  register_file
     clk, regwr, enable: in std_logic              -- clock and write enabled
   );
 end component;
+
 signal actual_wa: std_logic_vector(2 downto 0);
 constant zeroes_ext: std_logic_vector(8 downto 0) := (others => '0');
 constant ones_ext:   std_logic_vector(8 downto 0) := (others => '1');
@@ -75,7 +76,7 @@ begin
       if instr(6) = '0' then
         Ext_imm <= zeroes_ext & instr(6 downto 0);
       else
-        Ext_imm <= zeroes_ext & instr(6 downto 0);
+        Ext_imm <= ones_ext   & instr(6 downto 0);
       end if;    
     end if;
   end process;

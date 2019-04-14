@@ -73,7 +73,7 @@ if __name__ == "__main__":
   print(addi(bin(2, 3), bin(5, 3), bin(1, 7)))
   print(beq(bin(0, 3), bin(0, 3), bin(-12, 7)))
 
-  print(lw(bin(0, 3), bin(0, 3), bin(1, 7)))
+  print(add(bin(1, 3), bin(5, 3), bin(0, 3)))
   print(beq(bin(0, 3), bin(0, 3), bin(1, 7)))
 
-  print(lw(bin(0, 3), bin(0, 3), bin(0, 7)))
+  print(addi(bin(1, 3), bin(0, 3), bin(-1, 7)))

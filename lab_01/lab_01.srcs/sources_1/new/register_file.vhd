@@ -37,25 +37,15 @@ end register_file;
 
 architecture Behavioral of register_file is
 type reg_file_data is array(7 downto 0) of std_logic_vector(15 downto 0);
-
--- Function to init each line in the memory with a one_hot(index) vector
-  function init_memory return reg_file_data is
-  variable data: reg_file_data;
-  begin
-    for index in data'range loop
-      data(index) := std_logic_vector(to_unsigned(index, 16));
-    end loop;
-    return data;
-  end init_memory;
   
-signal mem_data: reg_file_data := init_memory;
+signal mem_data: reg_file_data := (others => x"0000");
 
 begin
   memory_logic: process(clk, regwr, ra1, ra2, wa, wd, enable)
   begin
-    if enable = '1' then
-      if rising_edge(clk) then
-        if regwr = '1' then
+    if rising_edge(clk) then
+      if regwr = '1' then
+        if enable = '1' then
           mem_data(conv_integer(wa)) <= wd;
         end if;
       end if;

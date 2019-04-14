@@ -3,7 +3,9 @@
 # a binary search algorithm given these input values
 
 # Data is stored in the RAM memory starting at the zero address
-# Store the result in M[0]
+# Store the result in RF[0]
+# => index of the element if present in the array
+# => -1 if not present in the array
 # Register $0 will always be zero
 
 lw $1, $0, 0      # load size stored as first element in the memory
@@ -32,8 +34,8 @@ beq $0, $0, -10   # loop again
 addi $2, $5, 1    # left = mid + 1 
 beq $0, $0, -12   # loop again
 
-sw $0, $0, 1      # element found
+add $1, $5, $0      # element found
 beq $0, $0, 1     # ignore the next instruction
 
-sw $0, $0, 0      # element not found
+addi $1, $0, -1     # element not found
 

@@ -113,7 +113,31 @@ component instr_decode is
   );
 end component;
 
-signal RegWr, RegDest, ExtOp, AluSrc, MemWr, MemtoReg, Jump, B, L, G: std_logic;
+component execute is
+  port (
+    rd1, rd2, ext_imm: in std_logic_vector(15 downto 0);
+    aluop: in std_logic_vector(1 downto 0);
+    alusrc: in std_logic;
+    sa: in std_logic;
+    func: in std_logic_vector(2 downto 0);
+    pcnext: in std_logic_vector(15 downto 0);
+    
+    zero: out std_logic;
+    alu_res: out std_logic_vector(15 downto 0);
+    branch_addr: out std_logic_vector(15 downto 0)
+  );
+end component;
+
+component mem is
+  port (
+    clk, enable, MemWrite: in std_logic;
+    ram_address: in std_logic_vector(15 downto 0);
+    ram_wd: in std_logic_vector(15 downto 0);
+    rdata: out std_logic_vector(15 downto 0)
+  );
+end component;
+
+signal RegWr, RegDest, ExtOp, AluSrc, MemWr, MemtoReg, Jump, B, L, G, zero, pcsrc: std_logic;
 signal AluOp: std_logic_vector(1 downto 0);
 signal func: std_logic_vector(2 downto 0);
 
@@ -124,8 +148,8 @@ signal displayed: std_logic_vector(15 downto 0);
 signal rom_out, ram_out: std_logic_vector(15 downto 0);
 
 signal reg_clk_enable, ram_clk_enable: std_logic;
-signal instruction, pc, Ext_imm, control_flags: std_logic_vector(15 downto 0);
-signal clk_if, sa: std_logic;
+signal instruction, pcnext, Ext_imm, control_flags, AluRes, branch_addr, jump_addr, MemData: std_logic_vector(15 downto 0);
+signal clk_if, sa, sign: std_logic;
 
 begin  
   first_button: mpg port map(
@@ -143,16 +167,17 @@ begin
     clk => clk,
     digits => displayed,
     an => an,
-    cat => cat);
+    cat => cat
+  );
   
   instrfetch: instr_fetch port map (
     clk => clk,
-    branch_addr => x"0002",
-    jmp_addr => x"0000",
+    branch_addr => branch_addr,
+    jmp_addr => jump_addr,
     instr => instruction,
-    next_instr_addr => pc,
-    jmp => sw(0),
-    pcsrc => sw(1),
+    next_instr_addr => pcnext,
+    jmp => Jump,
+    pcsrc => pcsrc,
     reset => reset_pc,
     enable => clk_enable
   );
@@ -178,19 +203,50 @@ begin
     func => func   
   );
   
-  mux_leds: process(sw(7 downto 5), instruction, pc, rd1, rd2, wd)
+  ex: execute port map (
+    rd1 => rd1, 
+    rd2 => rd2, 
+    ext_imm => Ext_imm,
+    aluop => AluOp, 
+    alusrc => AluSrc,
+    sa => sa,
+    func => func,
+    pcnext => pcnext,
+    zero => zero,
+    alu_res => AluRes,    
+    branch_addr => branch_addr
+  );
+
+  mem_comp: mem port map (
+    clk => clk , 
+    enable => clk_enable, 
+    MemWrite => MemWr,
+    ram_address => AluRes,
+    ram_wd => rd2,
+    rdata => MemData
+  );
+  
+  -- write back component
+  wd <= MemData when MemtoReg = '1' else AluRes;
+  
+  mux_leds: process(sw(7 downto 5), instruction, pcnext, rd1, rd2, wd, ext_imm, AluRes, MemData)
   begin
-    case sw(7 downto 5) is
+    case sw(7 downto 5) is 
       when "000"    => displayed <= instruction;
-      when "001"    => displayed <= pc;
+      when "001"    => displayed <= pcnext;
       when "010"    => displayed <= rd1;
       when "011"    => displayed <= rd2;
-      when "100"    => displayed <= wd;
-      when others => displayed <= (others => 'X');
+      when "100"    => displayed <= ext_imm;
+      when "101"    => displayed <= AluRes;
+      when "110"    => displayed <= MemData;
+      when "111"    => displayed <= wd;
+      when others   => displayed <= (others => 'X');
     end case;
   end process; 
-  
+    
+  jump_addr <= pcnext(15 downto 13) & instruction(12 downto 0);
+  sign <= AluRes(15); -- sign bit
+  pcsrc <= (B and zero) or ((not B) and L and sign) or ((not B) and (not sign) and (not L) and G);
   control_flags <= "0000" & RegWr & RegDest & AluOp & ExtOp & AluSrc & MemWr & MemtoReg & Jump & B & L & G;
-  wd <= rd1 + rd2;
   led <= control_flags;
 end Behavioral;   
