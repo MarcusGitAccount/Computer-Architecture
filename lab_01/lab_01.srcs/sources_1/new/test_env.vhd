@@ -101,6 +101,8 @@ end component;
 
 component instr_decode is
   port(
+    debug_a: in std_logic_vector(2 downto 0);
+    debug_d: out std_logic_vector(15 downto 0);
     clk, rf_enable: in std_logic;
     instr: in std_logic_vector(15 downto 0);     -- I.F. instruction retrieved from ROM
     RegWrite, RegDest, ExtOp: in std_logic;      -- input control 
@@ -148,8 +150,13 @@ signal displayed: std_logic_vector(15 downto 0);
 signal rom_out, ram_out: std_logic_vector(15 downto 0);
 
 signal reg_clk_enable, ram_clk_enable: std_logic;
-signal instruction, pcnext, Ext_imm, control_flags, AluRes, branch_addr, jump_addr, MemData: std_logic_vector(15 downto 0);
+signal instruction, pcnext, Ext_imm, AluRes, branch_addr, jump_addr, MemData: std_logic_vector(15 downto 0);
 signal clk_if, sa, sign: std_logic;
+
+signal control_flags: std_logic_vector(11 downto 0);
+signal debug_counter: std_logic_vector(2 downto 0) := b"000";
+signal debugup, debugdw: std_logic;
+signal debug_reg: std_logic_vector(15 downto 0);
 
 begin  
   first_button: mpg port map(
@@ -161,6 +168,18 @@ begin
     btn => btn(1),
     clk => clk,
     enable => reset_pc
+  );
+  
+  leftbtn: mpg port map(
+    btn => btn(2),
+    clk => clk,
+    enable => debugdw
+  );
+  
+  rightbrn: mpg port map(
+    btn => btn(3),
+    clk => clk,
+    enable => debugup
   );
   
   ssd_comp: ssd port map(
@@ -190,6 +209,8 @@ begin
   );
   
   id: instr_decode port map(
+    debug_a => debug_counter,
+    debug_d => debug_reg,
     clk =>  clk,
     rf_enable => clk_enable,
     instr => instruction,
@@ -226,27 +247,40 @@ begin
     rdata => MemData
   );
   
+  debugging_count: process(clk, debugup, debugdw)
+  begin
+    if rising_edge(clk) then
+      if debugdw = '1' then
+        debug_counter <= debug_counter - 1;
+      elsif debugup = '1' then
+        debug_counter <= debug_counter + 1;
+      end if;
+    end if;
+  end process;
+  
   -- write back component
   wd <= MemData when MemtoReg = '1' else AluRes;
   
-  mux_leds: process(sw(7 downto 5), instruction, pcnext, rd1, rd2, wd, ext_imm, AluRes, MemData)
+  mux_leds: process(sw(3 downto 0), instruction, pcnext, rd1, rd2, wd, ext_imm, AluRes, MemData)
   begin
-    case sw(7 downto 5) is 
-      when "000"    => displayed <= instruction;
-      when "001"    => displayed <= pcnext;
-      when "010"    => displayed <= rd1;
-      when "011"    => displayed <= rd2;
-      when "100"    => displayed <= ext_imm;
-      when "101"    => displayed <= AluRes;
-      when "110"    => displayed <= MemData;
-      when "111"    => displayed <= wd;
+    case sw(3 downto 0) is 
+      when "0000"    => displayed <= instruction;
+      when "0001"    => displayed <= pcnext;
+      when "0010"    => displayed <= rd1;
+      when "0011"    => displayed <= rd2;
+      when "0100"    => displayed <= ext_imm;
+      when "0101"    => displayed <= AluRes;
+      when "0110"    => displayed <= MemData;
+      when "0111"    => displayed <= wd;
+      when "1000"    => displayed <= debug_reg;
       when others   => displayed <= (others => 'X');
     end case;
   end process; 
     
   jump_addr <= pcnext(15 downto 13) & instruction(12 downto 0);
   sign <= AluRes(15); -- sign bit
-  pcsrc <= (B and zero) or ((not B) and L and sign) or ((not B) and (not sign) and (not L) and G);
-  control_flags <= "0000" & RegWr & RegDest & AluOp & ExtOp & AluSrc & MemWr & MemtoReg & Jump & B & L & G;
-  led <= control_flags;
+  pcsrc <= (B and zero) or ((not B) and L and sign and (not zero)) or ((not B) and (not sign) and (not L) and G and (not zero));
+  control_flags <= RegWr & RegDest & AluOp & ExtOp & AluSrc & MemWr & MemtoReg & Jump & B & L & G;
+  led(11 downto 0) <= control_flags;
+  led(15 downto 13) <= debug_counter;
 end Behavioral;   

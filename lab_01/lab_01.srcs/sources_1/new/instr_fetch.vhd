@@ -38,19 +38,19 @@ end instr_fetch;
 architecture Behavioral of instr_fetch is
   type instr_mem_data_type is array(32767 downto 0) of std_logic_vector(15 downto 0);
   signal instructions: instr_mem_data_type := (
-    0  => b"010_000_001_0000000",
-    1  => b"010_000_111_0000001",
-    2  => b"000_010_000_010_0_100",
-    3  => b"001_001_011_1111111",
-    4  => b"001_000_100_0000001",
-    5  => b"000_010_011_101_0_000",
-    6  => b"000_101_000_101_1_110",
-    7  => b"000_101_100_110_0_000",
-    8  => b"010_110_110_0000000",
-    9  => b"100_010_011_0000111",
-    10 => b"110_010_011_0001000",
-    11 => b"101_110_111_0000001",
-    12 => b"110_110_111_0000010",
+    0 => b"010_000_001_0000001",
+    1 => b"010_000_111_0000000",
+    2 => b"000_010_000_010_0_100",
+    3 => b"001_001_011_1111111",
+    4 => b"001_000_100_0000010",
+    5 => b"000_010_011_101_0_000",
+    6 => b"000_101_000_101_1_110",
+    7 => b"000_101_100_110_0_000",
+    8 => b"010_110_110_0000000",
+    9 => b"110_010_011_0001000",
+    10 => b"100_110_111_0000110",
+    11 => b"110_110_111_0000001",
+    12 => b"101_110_111_0000010",
     13 => b"001_101_011_1111111",
     14 => b"100_000_000_1110110",
     15 => b"001_101_010_0000001",
@@ -60,7 +60,8 @@ architecture Behavioral of instr_fetch is
     19 => b"001_000_001_1111111",
     others => x"0000"
   );
-signal pc: std_logic_vector(15 downto 0) := x"0000";
+  
+signal aux, pc: std_logic_vector(15 downto 0) := x"0000";
 begin
   instr <= instructions(conv_integer(pc));
   
@@ -68,18 +69,19 @@ begin
   begin
     if reset = '1' then
       pc <= x"0000";
-      next_instr_addr <= x"0001";
     elsif rising_edge(clk) then
       if enable = '1' then
         if jmp = '1' then
-          pc <= jmp_addr; -- this is to be calculated outside the instruction fetch component
+          pc <= jmp_addr;
         elsif pcsrc = '1' then
           pc <= branch_addr;
         else
           pc <= pc + 1;
         end if;
-        next_instr_addr <= pc + 1;
       end if;
     end if;
   end process;
+  
+  aux <= pc + 1;
+  next_instr_addr <= aux;
 end Behavioral;

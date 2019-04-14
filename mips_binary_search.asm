@@ -8,34 +8,34 @@
 # => -1 if not present in the array
 # Register $0 will always be zero
 
-lw $1, $0, 0      # load size stored as first element in the memory
-lw $7, $0, 1      # load element to be searched
+0 lw $1, $0, 1      # load size stored as second element in the memory
+1 lw $7, $0, 0      # load element to be searched
 
-and $2, $2, $0    # left index
-addi $3, $1, -1   # right index
+2 and $2, $2, $0    # left index
+3 addi $3, $1, -1   # right index
 
-addi $4, $0, 1    # memory address for the array (base)
+4 addi $4, $0, 2    # memory address for the array (base)
 
-add $5, $2, $3    # mid = left + right
-sra $5, $5, 1     # mid = mid >> 1 <=> mid = mid / 2
+5 add $5, $2, $3    # mid = left + right
+6 sra $5, $5, 1     # mid = mid >> 1 <=> mid = mid / 2
 
-add $6, $5, $4    # calculating array element offset for mid(base + index <=> $4 + $5)
-lw $6, $6, 0      # get array[mid]
+7 add $6, $5, $4    # calculating array element offset for mid(base + index <=> $4 + $5)
+8 lw $6, $6, 0      # get array[mid]
 
-beq $2, $3, 7     # if (left == right) => element found, done
-bgt $2, $3, 8     # if (left > right) => element not found, done
+9 bgt $2, $3, 8     # if (left > right) => element not found, done
 
-blt $6, $7, 1     # if (array[mid] < searched) then right = mid -1 (jump next instr + 1)
-bgt $6, $7, 2     # if (array[mid] > searched) then left = mid + 1 (jump next instr + 1)
+10 beq $6, $7, 6     # if (array[mid] == searched) then done
+11 bgt $6, $7, 1     # if (array[mid] > searched) then right = mid -1 (jump next instr + 1)
+12 blt $6, $7, 2     # if (array[mid] < searched) then left = mid + 1 (jump next instr + 1)
 
-addi $3, $5, -1   # right = mid -1 
-beq $0, $0, -10   # loop again
+13 addi $3, $5, -1   # right = mid -1 
+14 beq $0, $0, -10   # loop again
 
-addi $2, $5, 1    # left = mid + 1 
-beq $0, $0, -12   # loop again
+15 addi $2, $5, 1    # left = mid + 1 
+16 beq $0, $0, -12   # loop again
 
-add $1, $5, $0      # element found
-beq $0, $0, 1     # ignore the next instruction
+17 add $1, $5, $0      # element found
+18 beq $0, $0, 1     # ignore the next instruction
 
-addi $1, $0, -1     # element not found
+19 addi $1, $0, -1     # element not found
 

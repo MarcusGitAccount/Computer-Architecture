@@ -27,8 +27,8 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity register_file is
   port (
-    ra1, ra2: in  std_logic_vector(2 downto 0);   -- read addresses
-    rd1, rd2: out std_logic_vector(15 downto 0);  -- read data
+    ra1, ra2, ra3: in  std_logic_vector(2 downto 0);   -- read addresses
+    rd1, rd2, rd3: out std_logic_vector(15 downto 0);  -- read data
     wa: in std_logic_vector(2 downto 0);          -- write address
     wd: in std_logic_vector(15 downto 0);         -- write data
     clk, regwr, enable: in std_logic                      -- clock and write enabled
@@ -53,5 +53,6 @@ begin
     
     rd1 <= mem_data(conv_integer(ra1));
     rd2 <= mem_data(conv_integer(ra2));
+    rd3 <= mem_data(conv_integer(ra3));
   end process;
 end Behavioral;
