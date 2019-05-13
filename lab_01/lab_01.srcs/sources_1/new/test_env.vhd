@@ -101,13 +101,15 @@ end component;
 
 component instr_decode is
   port(
+    wa: in std_logic_vector(2 downto 0);
     debug_a: in std_logic_vector(2 downto 0);
-    debug_d: out std_logic_vector(15 downto 0);
     clk, rf_enable: in std_logic;
     instr: in std_logic_vector(15 downto 0);     -- I.F. instruction retrieved from ROM
     RegWrite, RegDest, ExtOp: in std_logic;      -- input control 
     wd: in std_logic_vector(15 downto 0);        -- write data input for rf
     
+    debug_d: out std_logic_vector(15 downto 0);
+    rt, rd: out  std_logic_vector(2 downto 0); 
     rd1, rd2: out std_logic_vector(15 downto 0); -- rf file output(rs and rt registers)
     Ext_imm: out std_logic_vector(15 downto 0);  -- immediate value extended to 16bits
     sa: out std_logic;                           -- shift amount
@@ -158,6 +160,13 @@ signal debug_counter: std_logic_vector(2 downto 0) := b"000";
 signal debugup, debugdw: std_logic;
 signal debug_reg: std_logic_vector(15 downto 0);
 
+signal if_id:  std_logic_vector(31 downto 0) := (others => '0');
+signal id_ex:  std_logic_vector(83 downto 0) := (others => '0');
+signal ex_mem: std_logic_vector(57 downto 0) := (others => '0');
+signal mem_wb: std_logic_vector(36 downto 0) := (others => '0');
+
+signal rt, rd, wa: std_logic_vector(2 downto 0) := b"000";
+
 begin  
   first_button: mpg port map(
     btn => btn(0), 
@@ -167,86 +176,176 @@ begin
   second_button: mpg port map(
     btn => btn(1),
     clk => clk,
-    enable => reset_pc
-  );
+    enable => reset_pc);
   
   leftbtn: mpg port map(
     btn => btn(2),
     clk => clk,
-    enable => debugdw
-  );
+    enable => debugdw);
   
-  rightbrn: mpg port map(
+  rightbtn: mpg port map(
     btn => btn(3),
     clk => clk,
-    enable => debugup
-  );
+    enable => debugup);
   
   ssd_comp: ssd port map(
     clk => clk,
     digits => displayed,
     an => an,
-    cat => cat
-  );
+    cat => cat);
   
+ 
   instrfetch: instr_fetch port map (
-    clk => clk,
+    -- in ports
+    clk         => clk,
     branch_addr => branch_addr,
-    jmp_addr => jump_addr,
-    instr => instruction,
+    jmp_addr    => jump_addr,
+    jmp         => Jump,
+    pcsrc       => pcsrc,
+    reset       => reset_pc,
+    enable      => clk_enable,
+    -- out ports
+    instr           => instruction,
     next_instr_addr => pcnext,
-    jmp => Jump,
-    pcsrc => pcsrc,
-    reset => reset_pc,
-    enable => clk_enable
   );
   
+  jump_addr <= if_id(31 downto 29) & if_id(12 downto 0);
+
+  if_id_input: process(clk, instruction, pcnext)
+  begin
+    if rising_edge(clk) then
+      if_id(31 downto 16) <= pcnext;
+      if_id(15 downto  0) <= instruction;
+    end if;
+  end process;
+
   uc: control_unit port map(
-    RegWr => RegWr, RegDest => RegDest, 
-    ExtOp => ExtOp, AluSrc => AluSrc, MemWr => MemWr, MemtoReg => MemtoReg, 
-    Jump => Jump, B => B, L => L, G => G,
-    AluOp => AluOp, op_code => instruction(15 downto 13)
+    -- out port(s)
+    RegWr    => RegWr, 
+    RegDest  => RegDest, 
+    ExtOp    => ExtOp, 
+    AluSrc   => AluSrc, 
+    MemWr    => MemWr, 
+    MemtoReg => MemtoReg, 
+    Jump     => Jump, 
+    B        => B, 
+    L        => L, 
+    G        => G,
+    AluOp    => AluOp, 
+    -- in port(s)
+    op_code => if_id(15 downto 13) -- function code
   );
   
   id: instr_decode port map(
-    debug_a => debug_counter,
-    debug_d => debug_reg,
-    clk =>  clk,
+    -- in ports
+    debug_a   => debug_counter,
+    clk       =>  clk,
     rf_enable => clk_enable,
-    instr => instruction,
-    RegWrite => RegWr,
-    RegDest => RegDest,
-    ExtOp => ExtOp,      
-    wd => wd,
-    rd1 => rd1, rd2 => rd2,
+    instr     => if_id(15 downto  0),
+    RegWrite  => mem_wb(35),
+    RegDest   => RegDest,
+    ExtOp     => ExtOp,      
+    wd        => wd,
+    wa        => wa
+    -- out ports
+    rd1     => rd1, 
+    rd2      => rd2,
+    debug_d => debug_reg,
     Ext_imm => Ext_imm, 
-    sa => sa,                          
-    func => func   
+    sa      => sa,                          
+    rt      => rd, 
+    rd      => rd, 
+    func    => func
   );
+
+  id_ex_input: process(clk)
+  begin
+    if rising_edge(clk) then
+      id_ex(83)           <= sa;
+      id_ex(82 downto 67) <= rd1;
+      id_ex(66 downto 51) <= rd2;
+      id_ex(50 downto 35) <= Ext_imm;
+      id_ex(34 downto 32) <= func;
+      id_ex(31 downto 29) <= rt;
+      id_ex(28 downto 26) <= rd;
+      id_ex(25 downto 10) <= if_id(31 downto 16); -- pc + 1
+      id_ex( 9 downto  8) <= AluOp;
+      id_ex(7)            <= AluSrc;
+      id_ex(6)            <= RegDest;
+      id_ex(5)            <= B;
+      id_ex(4)            <= L;
+      id_ex(3)            <= G;
+      id_ex(2)            <= MemWr;
+      id_ex(1)            <= MemtoReg;
+      id_ex(0)            <= RegWr;
+    end if;
+  end process;
   
   ex: execute port map (
-    rd1 => rd1, 
-    rd2 => rd2, 
-    ext_imm => Ext_imm,
-    aluop => AluOp, 
-    alusrc => AluSrc,
-    sa => sa,
-    func => func,
-    pcnext => pcnext,
-    zero => zero,
-    alu_res => AluRes,    
+    -- in ports
+    rd1     => id_ex(82 downto 67), 
+    rd2     => id_ex(66 downto 51), 
+    ext_imm => id_ex(50 downto 35),
+    aluop   => id_ex( 9 downto  8), 
+    alusrc  => id_ex(7),
+    sa      => id_ex(83),
+    func    => id_ex(34 downto 32),
+    pcnext  => id_ex(25 downto 10),
+    -- out ports
+    zero        => zero,
+    alu_res     => AluRes,    
     branch_addr => branch_addr
   );
 
+  ex_mem_input: process(clk)
+  begin
+    if rising_edge(clk) then
+      ex_mem(57 downto 56) <= id_ex(1 downto 0); -- M signals
+      ex_mem(55 downto 52) <= id_ex(5 downto 2); -- WB signals
+      ex_mem(51 downto 36) <= branch_addr;
+      ex_mem(35)           <= zero;
+      ex_mem(34 downto 19) <= AluRes;
+      ex_mem(18 downto  3) <= id_ex(66 downto 51); -- rd2
+      ex_mem( 2 downto  0) <= id_ex(31 downto 29) when id_ex(6) = '0' else id_ex(28 downto 26); 
+         -- RegDest MUX, choosing between rt and rd
+    end if;
+  end process;
+
   mem_comp: mem port map (
-    clk => clk , 
-    enable => clk_enable, 
-    MemWrite => MemWr,
-    ram_address => AluRes,
-    ram_wd => rd2,
+    -- in port(s)
+    clk         => clk, 
+    enable      => clk_enable, 
+    MemWrite    => ex_mem(52),
+    ram_address => ex_mem(34 downto 19),
+    ram_wd      => ex_mem(18 downto  3),
+    -- out port(s)
     rdata => MemData
   );
   
+  -- B    <=> ex_mem(55)
+  -- L    <=> ex_mem(54)
+  -- G    <=> ex_mem(53)
+  -- zero <=> ex_mem(35)
+  sign <= ex_mem(34); -- sign bit (AluRes(15))
+  wa <=  mem_wb(2 downto 0); -- write address for RF
+  pcsrc <= (ex_mem(55) and zero) 
+    or ((not ex_mem(55)) and ex_mem(54) and sign and (not ex_mem(35))) 
+    or ((not ex_mem(55)) and (not sign) and (not ex_mem(54)) and ex_mem(53) and (not ex_mem(35)));
+
+  mem_input: process(clk)
+  begin
+    if rising_edge(clk) then
+      mem_wb(36 downto 35) <= ex_mem(57 downto 56);
+      mem_wb(34 downto 19) <= MemData;             -- RAM output data
+      mem_wb(18 downto  3) <= ex_mem(34 downto 19) -- AluRes
+      mem_wb( 2 downto  0) <= ex_mem( 2 downto  0) -- rt vs rd choice
+    end if;
+  end process;
+
+  -- write back component
+  -- wd <= MemData when MemtoReg = '1' else AluRes;
+  wd <= mem_wb(34 downto 19) when mem_wb(36) = '1' else mem_wb(18 downto 3);
+
   debugging_count: process(clk, debugup, debugdw)
   begin
     if rising_edge(clk) then
@@ -257,9 +356,6 @@ begin
       end if;
     end if;
   end process;
-  
-  -- write back component
-  wd <= MemData when MemtoReg = '1' else AluRes;
   
   mux_leds: process(sw(3 downto 0), instruction, pcnext, rd1, rd2, wd, ext_imm, AluRes, MemData)
   begin
@@ -277,10 +373,7 @@ begin
     end case;
   end process; 
     
-  jump_addr <= pcnext(15 downto 13) & instruction(12 downto 0);
-  sign <= AluRes(15); -- sign bit
-  pcsrc <= (B and zero) or ((not B) and L and sign and (not zero)) or ((not B) and (not sign) and (not L) and G and (not zero));
-  control_flags <= RegWr & RegDest & AluOp & ExtOp & AluSrc & MemWr & MemtoReg & Jump & B & L & G;
+  control_flags <= RegWr & RegDest & ExtOp & AluOp & AluSrc & MemWr & MemtoReg & Jump & B & L & G;
   led(11 downto 0) <= control_flags;
   led(15 downto 13) <= debug_counter;
 end Behavioral;   

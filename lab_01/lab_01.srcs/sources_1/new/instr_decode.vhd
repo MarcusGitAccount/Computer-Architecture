@@ -29,6 +29,7 @@ entity instr_decode is
     debug_a: in std_logic_vector(2 downto 0);
     debug_d: out std_logic_vector(15 downto 0);
     
+    wa: in std_logic_vector(2 downto 0);
     clk, rf_enable: in std_logic;
     instr: in std_logic_vector(15 downto 0);     -- I.F. instruction retrieved from ROM
     RegWrite, RegDest, ExtOp: in std_logic;      -- input control 
@@ -46,6 +47,7 @@ component  register_file
   port (
     ra1, ra2, ra3: in  std_logic_vector(2 downto 0);   -- read addresses
     rd1, rd2, rd3: out std_logic_vector(15 downto 0);  -- read data
+    rt, rd: out  std_logic_vector(2 downto 0); 
     wa: in std_logic_vector(2 downto 0);          -- write address
     wd: in std_logic_vector(15 downto 0);         -- write data
     clk, regwr, enable: in std_logic              -- clock and write enabled
@@ -62,16 +64,20 @@ begin
     ra1 => instr(12 downto 10),
     ra2 => instr(9 downto 7),
     ra3 => debug_a,
+    wa => wa,
     clk => clk, regwr => RegWrite,
     wa => actual_wa, wd => wd
   );
   
   -- chose between rt or rd for the destination register
-  actual_wa <= instr(9 downto 7) when RegDest = '0' else instr(6 downto 4);
+  -- actual_wa <= instr(9 downto 7) when RegDest = '0' else instr(6 downto 4); -- only for MIPS unicycle
+  rt <= instr(9 downto 7);
+  rd <= instr(6 downto 4);
   func <= instr(2 downto 0);
   sa <= instr(3);
   Ext_imm <= std_logic_vector(resize(signed(instr(6 downto 0)), 16));  
  
+-- for some reason this does not work properly as expected
 --  sign_ext: process(instr, ExtOp)
 --  begin
 --    if ExtOp = '0' then
