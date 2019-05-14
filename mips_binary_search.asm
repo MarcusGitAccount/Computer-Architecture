@@ -22,7 +22,7 @@
 7 add $6, $5, $4    # calculating array element offset for mid(base + index <=> $4 + $5)
 8 lw $6, $6, 0      # get array[mid]
 
-9 bgt $2, $3, 8     # if (left > right) => element not found, done
+9 bgt $2, $3, 9     # if (left > right) => element not found, done
 
 10 beq $6, $7, 6     # if (array[mid] == searched) then done
 11 bgt $6, $7, 1     # if (array[mid] > searched) then right = mid -1 (jump next instr + 1)
@@ -34,7 +34,7 @@
 15 addi $2, $5, 1    # left = mid + 1 
 16 beq $0, $0, -12   # loop again
 
-17 add $1, $5, $0      # element found
+17 add $1, $5, $0    # element found
 18 beq $0, $0, 1     # ignore the next instruction
 
 19 addi $1, $0, -1     # element not found

@@ -206,7 +206,7 @@ begin
     enable      => clk_enable,
     -- out ports
     instr           => instruction,
-    next_instr_addr => pcnext,
+    next_instr_addr => pcnext
   );
   
   jump_addr <= if_id(31 downto 29) & if_id(12 downto 0);
@@ -233,23 +233,23 @@ begin
     G        => G,
     AluOp    => AluOp, 
     -- in port(s)
-    op_code => if_id(15 downto 13) -- function code
+    op_code  => if_id(15 downto 13) -- function code
   );
   
   id: instr_decode port map(
     -- in ports
     debug_a   => debug_counter,
-    clk       =>  clk,
+    clk       => clk,
     rf_enable => clk_enable,
     instr     => if_id(15 downto  0),
     RegWrite  => mem_wb(35),
     RegDest   => RegDest,
     ExtOp     => ExtOp,      
     wd        => wd,
-    wa        => wa
+    wa        => wa,
     -- out ports
     rd1     => rd1, 
-    rd2      => rd2,
+    rd2     => rd2,
     debug_d => debug_reg,
     Ext_imm => Ext_imm, 
     sa      => sa,                          
@@ -337,12 +337,12 @@ begin
     if rising_edge(clk) then
       mem_wb(36 downto 35) <= ex_mem(57 downto 56);
       mem_wb(34 downto 19) <= MemData;             -- RAM output data
-      mem_wb(18 downto  3) <= ex_mem(34 downto 19) -- AluRes
-      mem_wb( 2 downto  0) <= ex_mem( 2 downto  0) -- rt vs rd choice
+      mem_wb(18 downto  3) <= ex_mem(34 downto 19); -- AluRes
+      mem_wb( 2 downto  0) <= ex_mem( 2 downto  0); -- rt vs rd choice
     end if;
   end process;
 
-  -- write back component
+  -- write back componen
   -- wd <= MemData when MemtoReg = '1' else AluRes;
   wd <= mem_wb(34 downto 19) when mem_wb(36) = '1' else mem_wb(18 downto 3);
 
@@ -360,16 +360,16 @@ begin
   mux_leds: process(sw(3 downto 0), instruction, pcnext, rd1, rd2, wd, ext_imm, AluRes, MemData)
   begin
     case sw(3 downto 0) is 
-      when "0000"    => displayed <= instruction;
-      when "0001"    => displayed <= pcnext;
-      when "0010"    => displayed <= rd1;
-      when "0011"    => displayed <= rd2;
-      when "0100"    => displayed <= ext_imm;
-      when "0101"    => displayed <= AluRes;
-      when "0110"    => displayed <= MemData;
-      when "0111"    => displayed <= wd;
-      when "1000"    => displayed <= debug_reg;
-      when others   => displayed <= (others => 'X');
+      when "0000" => displayed <= instruction;
+      when "0001" => displayed <= pcnext;
+      when "0010" => displayed <= rd1;
+      when "0011" => displayed <= rd2;
+      when "0100" => displayed <= ext_imm;
+      when "0101" => displayed <= AluRes;
+      when "0110" => displayed <= MemData;
+      when "0111" => displayed <= wd;
+      when "1000" => displayed <= debug_reg;
+      when others => displayed <= (others => 'X');
     end case;
   end process; 
     

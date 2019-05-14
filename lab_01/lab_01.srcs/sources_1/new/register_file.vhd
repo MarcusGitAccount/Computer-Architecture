@@ -31,7 +31,7 @@ entity register_file is
     rd1, rd2, rd3: out std_logic_vector(15 downto 0);  -- read data
     wa: in std_logic_vector(2 downto 0);          -- write address
     wd: in std_logic_vector(15 downto 0);         -- write data
-    clk, regwr, enable: in std_logic                      -- clock and write enabled
+    clk, regwr, enable: in std_logic              -- clock and write enabled
   );
 end register_file;
 
@@ -43,7 +43,7 @@ signal mem_data: reg_file_data := (others => x"0000");
 begin
   memory_logic: process(clk, regwr, ra1, ra2, wa, wd, enable)
   begin
-    if rising_edge(clk) then
+    if falling_edge(clk) then -- change made for MIPS pipeline
       if regwr = '1' then
         if enable = '1' then
           mem_data(conv_integer(wa)) <= wd;
@@ -53,6 +53,6 @@ begin
     
     rd1 <= mem_data(conv_integer(ra1));
     rd2 <= mem_data(conv_integer(ra2));
-    rd3 <= mem_data(conv_integer(ra3));
+    rd3 <= mem_data(conv_integer(ra3)); -- leds debugging port
   end process;
 end Behavioral;
