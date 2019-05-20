@@ -55,8 +55,8 @@ end component;
 
 component  register_file
   port (
-    ra1, ra2: in  std_logic_vector(3 downto 0);   -- read addresses
-    rd1, rd2: out std_logic_vector(15 downto 0);  -- read data
+
+  rd1, rd2: out std_logic_vector(15 downto 0);  -- read data
     wa: in std_logic_vector(3 downto 0);          -- write address
     wd: in std_logic_vector(15 downto 0);         -- write data
     clk, regwr: in std_logic                      -- clock and write enabled
@@ -166,6 +166,7 @@ signal ex_mem: std_logic_vector(57 downto 0) := (others => '0');
 signal mem_wb: std_logic_vector(36 downto 0) := (others => '0');
 
 signal rt, rd, wa: std_logic_vector(2 downto 0) := b"000";
+signal start: std_logic_vector(2 downto 0);
 
 begin  
   first_button: mpg port map(
@@ -209,6 +210,7 @@ begin
     next_instr_addr => pcnext
   );
   
+  --start <= if_id(31 downto 29);
   jump_addr <= if_id(31 downto 29) & if_id(12 downto 0);
 
   if_id_input: process(clk, instruction, pcnext)
@@ -253,7 +255,7 @@ begin
     debug_d => debug_reg,
     Ext_imm => Ext_imm, 
     sa      => sa,                          
-    rt      => rd, 
+    rt      => rt, 
     rd      => rd, 
     func    => func
   );
@@ -357,7 +359,7 @@ begin
     end if;
   end process;
   
-  mux_leds: process(sw(3 downto 0), instruction, pcnext, rd1, rd2, wd, ext_imm, AluRes, MemData)
+  mux_leds: process(sw(3 downto 0), instruction, pcnext, rd1, rd2, wd, ext_imm, AluRes, MemData, debug_reg)
   begin
     case sw(3 downto 0) is 
       when "0000" => displayed <= instruction;

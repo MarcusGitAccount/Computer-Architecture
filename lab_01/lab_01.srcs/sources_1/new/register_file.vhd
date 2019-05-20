@@ -41,7 +41,7 @@ type reg_file_data is array(7 downto 0) of std_logic_vector(15 downto 0);
 signal mem_data: reg_file_data := (others => x"0000");
 
 begin
-  memory_logic: process(clk, regwr, ra1, ra2, wa, wd, enable)
+  memory_logic: process(clk, regwr, ra1, ra2, ra3, wa, wd, enable)
   begin
     if falling_edge(clk) then -- change made for MIPS pipeline
       if regwr = '1' then

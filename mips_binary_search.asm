@@ -3,7 +3,7 @@
 # a binary search algorithm given these input values
 
 # Data is stored in the RAM memory starting at the zero address
-# Store the result in RF[0]
+# Store the result in RF[1](RF[0] will always be NULL)
 # => index of the element if present in the array
 # => -1 if not present in the array
 # Register $0 will always be zero

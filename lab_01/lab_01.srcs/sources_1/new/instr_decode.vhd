@@ -35,6 +35,7 @@ entity instr_decode is
     RegWrite, RegDest, ExtOp: in std_logic;      -- input control 
     wd: in std_logic_vector(15 downto 0);        -- write data input for rf
     
+    rt, rd: out  std_logic_vector(2 downto 0); 
     rd1, rd2: out std_logic_vector(15 downto 0); -- rf file output(rs and rt registers)
     Ext_imm: out std_logic_vector(15 downto 0);  -- immediate value extended to 16bits
     sa: out std_logic;                           -- shift amount
@@ -47,7 +48,6 @@ component  register_file
   port (
     ra1, ra2, ra3: in  std_logic_vector(2 downto 0);   -- read addresses
     rd1, rd2, rd3: out std_logic_vector(15 downto 0);  -- read data
-    rt, rd: out  std_logic_vector(2 downto 0); 
     wa: in std_logic_vector(2 downto 0);          -- write address
     wd: in std_logic_vector(15 downto 0);         -- write data
     clk, regwr, enable: in std_logic              -- clock and write enabled
@@ -66,7 +66,7 @@ begin
     ra3 => debug_a,
     wa => wa,
     clk => clk, regwr => RegWrite,
-    wa => actual_wa, wd => wd
+    wd => wd
   );
   
   -- chose between rt or rd for the destination register
