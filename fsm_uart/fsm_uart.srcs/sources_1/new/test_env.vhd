@@ -111,12 +111,12 @@ begin
   tx_enables: process(clk, button, baud)
   begin
     if rising_edge(clk) then
-      if button = '1' then
-        if baud = '1' then
-          tx_en <= '0';
-        else
+      if baud = '0' then
+        if button = '1' then
           tx_en <= '1';
         end if;
+      elsif baud = '1' then
+        tx_en <= '0';
       end if;
     end if;
   end process;

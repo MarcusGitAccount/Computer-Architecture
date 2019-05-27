@@ -60,7 +60,7 @@ begin
         when bits   =>
           if bit_cnt = b"111" then
             if baud_enable = '1' then
---              bit_cnt <= b"000";
+              bit_cnt <= b"000";
               state <= stop;
             end if;
           elsif bit_cnt < b"111" then
