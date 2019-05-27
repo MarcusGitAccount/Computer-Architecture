@@ -57,11 +57,11 @@ component mpg is
   );
 end component;
 
-constant baud_final: std_logic_vector(13 downto 0) := b"10100010101111"; -- 10416
+constant baud_final: std_logic_vector(13 downto 0) := b"10100010101111"; -- 10415
 signal baud_cnt: std_logic_vector(13 downto 0) := (others => '0');
 signal baud: std_logic;
 signal char: std_logic_vector(7 downto 0); --- := x"41"; -- 'A'
-signal tx_en: std_logic;
+signal tx_en: std_logic := '0';
 signal button, tx_ready: std_logic;
 signal mpg_counter: std_logic_vector(3 downto 0) := x"0";
 begin
@@ -108,29 +108,30 @@ begin
   
 --  led(15 downto 12) <= mpg_counter;
   
---  tx_enables: process(clk, button, baud)
---  begin
---    if rising_edge(clk) then
---      if button = '1' then
---        if baud = '1' then
---          tx_en <= '0';
---        else
---          tx_en <= '1';
---        end if;
---      end if;
---    end if;
---  end process;
-  
-  baud <= '1' when baud_cnt = baud_final else '0';
-
-  tx_enable: process(clk, button, baud)
+  tx_enables: process(clk, button, baud)
   begin
-    if baud = '1' then
-      tx_en <= '0';
-    elsif rising_edge(clk) then
+    if rising_edge(clk) then
       if button = '1' then
-        tx_en <= '1';
+        if baud = '1' then
+          tx_en <= '0';
+        else
+          tx_en <= '1';
+        end if;
       end if;
     end if;
   end process;
+  
+  baud <= '1' when baud_cnt = baud_final else '0';
+
+--  async baud reset
+--  tx_enable: process(clk, button, baud)
+--  begin
+--    if baud = '1' then
+--      tx_en <= '0';
+--    elsif rising_edge(clk) then
+--      if button = '1' then
+--        tx_en <= '1';
+--      end if;
+--    end if;
+--  end process;
 end Behavioral;
