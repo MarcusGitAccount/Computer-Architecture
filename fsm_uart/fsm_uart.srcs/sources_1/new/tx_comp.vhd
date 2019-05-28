@@ -45,37 +45,31 @@ begin
     if rst = '1' then
       state <= idle;
     elsif rising_edge(clk) then
-      case state is
-        when idle   =>
-          if tx_en = '1' then
-            if baud_enable = '1' then
-              state <= start;
-              bit_cnt <= b"000";
+      if baud_enable = '1' then
+        case state is
+          when idle   =>
+            if tx_en = '1' then
+                state <= start;
+                bit_cnt <= b"000";
             end if;
-          end if;
-        when start  =>
-          if baud_enable = '1' then
-            state <= bits;
-          end if;
-        when bits   =>
-          if bit_cnt = b"111" then
-            if baud_enable = '1' then
-              bit_cnt <= b"000";
-              state <= stop;
-            end if;
-          elsif bit_cnt < b"111" then
-            if baud_enable = '1' then
-              bit_cnt <= bit_cnt + 1;
+          when start  =>
               state <= bits;
+          when bits   =>
+            if bit_cnt = b"111" then
+                bit_cnt <= b"000";
+                state <= stop;
+            elsif bit_cnt < b"111" then
+                bit_cnt <= bit_cnt + 1;
+                state <= bits;
             end if;
-          end if;
-        when stop   =>
-          if baud_enable = '1' then
+          when stop   =>
+            if baud_enable = '1' then
+              state <= idle;
+            end if;
+          when others =>
             state <= idle;
-          end if;
-        when others =>
-          state <= idle;
-      end case;
+        end case;
+      end if;
     end if;
   end process;  
 

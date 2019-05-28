@@ -89,10 +89,10 @@ begin
     if rising_edge(clk) then
       if baud_cnt = baud_final then
         baud_cnt <= (others => '0');
---        baud <= '1';
+        baud <= '1';
       else
         baud_cnt <= baud_cnt + 1;
---        baud <= '0';
+        baud <= '0';
       end if;
     end if;
   end process;
@@ -121,7 +121,7 @@ begin
     end if;
   end process;
   
-  baud <= '1' when baud_cnt = baud_final else '0';
+--  baud <= '1' when baud_cnt = baud_final else '0';
 
 --  async baud reset
 --  tx_enable: process(clk, button, baud)
